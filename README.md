@@ -2,9 +2,9 @@
 
 ## Overview
 
-**RE:JEMS-Alter** is a Blender add-on designed to simplify animation keyframes, resulting in smoother animations and smaller file sizes. It utilizes a **Bezier curve fitting algorithm** that intelligently adjusts control points to fit a curve to the original keyframe data. The algorithm adapts to the number of input points, effectively providing the functionality of Visvalingam-Whyatt within the curve fitting process.
+**RE:JEMS-Alter** is a Blender add-on designed to simplify animation keyframes, including those from **motion capture (mocap)** data, resulting in smoother animations and smaller file sizes. It utilizes a **Bezier curve fitting algorithm** that intelligently adjusts control points to fit a curve to the original keyframe data. The algorithm adapts to the number of input points, effectively providing the functionality of Visvalingam-Whyatt within the curve fitting process.
 
-RE:JEMS-Alter also provides an option to use the Visvalingam-Whyatt algorithm for initial keyframe reduction, and it includes an outlier detection mechanism to enhance the robustness of the simplification process. You can control the degree of simplification through various parameters, making it a versatile tool for animators.
+RE:JEMS-Alter also provides an option to use the Visvalingam-Whyatt algorithm for initial keyframe reduction, and it includes an outlier detection mechanism to enhance the robustness of the simplification process, which is particularly useful for cleaning up raw **mocap** data. You can control the degree of simplification through various parameters, making it a versatile tool for animators.
 
 **Note:** The name "JEMS" in RE:JEMS-Alter is not an acronym but simply a name chosen for this project.
 
@@ -12,7 +12,7 @@ RE:JEMS-Alter also provides an option to use the Visvalingam-Whyatt algorithm fo
 
 *   **Bezier Curve Fitting Algorithm:** Efficiently simplifies keyframes by fitting a Bezier curve to the animation data.
 *   **Visvalingam-Whyatt Simplification:** Option to pre-process keyframes using the Visvalingam-Whyatt algorithm for initial reduction.
-*   **Outlier Detection:** Identifies and optionally removes outlier keyframes to improve fitting accuracy.
+*   **Outlier Detection:** Identifies and optionally removes outlier keyframes, which is especially helpful for cleaning **mocap** data, to improve fitting accuracy.
 *   **Bone Whitelist:** Exclude specific bones from simplification, preserving their original animation data.
 *   **Adjustable Parameters:** Fine-tune the simplification process with parameters like:
     *   **VW Tolerance:** Controls the simplification level of the Visvalingam-Whyatt algorithm.
@@ -35,11 +35,11 @@ RE:JEMS-Alter also provides an option to use the Visvalingam-Whyatt algorithm fo
 
 ## Usage
 
-1. **Select an Armature Object:** Ensure that the active object is an armature with animation data.
+1. **Select an Armature Object:** Ensure that the active object is an armature with animation data, which could be from **motion capture**.
 2. **Choose an Action:** In the RE:JEMS-Alter panel (found in the 3D View sidebar under the "JEMS Tools" tab), select the animation action you want to simplify from the "Select Action" dropdown.
 3. **Adjust Parameters (Optional):**
 
-    *   **Use Outlier Detection:** Toggle outlier detection on or off.
+    *   **Use Outlier Detection:** Toggle outlier detection on or off. This is particularly useful for raw **mocap** data.
     *   **Outlier Threshold:** Adjust the sensitivity of the outlier detection.
     *   **VW Tolerance:** Set the desired tolerance for Visvalingam-Whyatt simplification (if used).
     *   **Error Threshold:** Modify the target accuracy for the Bezier curve fit.
@@ -49,7 +49,7 @@ RE:JEMS-Alter also provides an option to use the Visvalingam-Whyatt algorithm fo
 
     *   Go to the "Bone Whitelist" subpanel.
     *   Use the eyedropper to select bones in the 3D viewport or manually type their names.
-    *   Add bones to the whitelist to prevent them from being simplified.
+    *   Add bones to the whitelist to prevent them from being simplified. This can be useful if certain bones' **mocap** data needs to be preserved without any changes.
 5. **Simplify Keyframes:** Click the "Simplify Keyframes (RE:JEMS-Alter)" button.
 6. **New Action Created:** A new action named "Simplified\_\<original action name\>" will be created and assigned to the armature. This new action contains the simplified keyframes.
 
@@ -57,7 +57,7 @@ RE:JEMS-Alter also provides an option to use the Visvalingam-Whyatt algorithm fo
 
 The RE:JEMS-Alter add-on employs a multi-stage pipeline for keyframe simplification:
 
-1. **Outlier Detection (Optional):** If enabled, the add-on detects and removes outlier keyframes using a median-based approach.
+1. **Outlier Detection (Optional):** If enabled, the add-on detects and removes outlier keyframes using a median-based approach. This is useful for cleaning up noisy **motion capture** data.
 2. **Visvalingam-Whyatt Simplification (Optional):** If a VW Tolerance is specified, the Visvalingam-Whyatt algorithm reduces the number of keyframes based on their contribution to the overall shape of the animation curve.
 3. **Bezier Curve Fitting:**
 
@@ -70,8 +70,8 @@ The RE:JEMS-Alter add-on employs a multi-stage pipeline for keyframe simplificat
 ## Notes
 
 *   The original animation action is preserved. RE:JEMS-Alter creates a new action with the simplified keyframes.
-*   The add-on is designed for armatures with animation data. Using it on other object types may not produce the desired results.
-*   Experiment with the parameters to achieve the best balance between simplification and accuracy for your specific animation.
+*   The add-on is designed for armatures with animation data, including **motion capture** data. Using it on other object types may not produce the desired results.
+*   Experiment with the parameters to achieve the best balance between simplification and accuracy for your specific animation, especially when working with **mocap** data, which can have varying levels of noise.
 *   If you have many bones that you don't want simplified, adding them to the whitelist can significantly improve performance by preventing unnecessary calculations.
 
 ## License and Attribution
