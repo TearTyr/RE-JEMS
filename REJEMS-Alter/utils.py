@@ -2,6 +2,7 @@ import numpy as np
 from math import comb
 
 class BezierCurve:
+    """Represents a Bezier curve of any given degree."""
     def __init__(self, control_points: np.ndarray):
         self.control_points = np.array(control_points)
         self.degree = len(control_points) - 1
@@ -19,6 +20,10 @@ class BezierCurve:
         return points
 
 def get_initial_control_points(points: np.ndarray, vw_tolerance=None):
+    """
+    Initializes control points using simplified points from Visvalingam-Whyatt or directly
+    from input points.
+    """
     points = np.array(points)
     simplified_points = points
 
@@ -28,6 +33,10 @@ def get_initial_control_points(points: np.ndarray, vw_tolerance=None):
     return simplified_points
 
 def initial_control_points_heuristic(points, vw_tolerance=None):
+    """
+    Initializes control points using simplified points from Visvalingam-Whyatt.
+    The degree is determined by the simplified points.
+    """
     points = np.array(points)
     simplified_points = points
 
@@ -37,28 +46,41 @@ def initial_control_points_heuristic(points, vw_tolerance=None):
     return simplified_points
 
 def detect_outliers(points, threshold=3):
+    """
+    Detects outliers using a median-based approach with special handling for edges.
+    """
     outliers = np.zeros(len(points), dtype=bool)
     if len(points) < 3:
         return outliers
 
+    # Handle first and last points separately
     if np.linalg.norm(points[0] - points[1]) > threshold:
         outliers[0] = True
     if np.linalg.norm(points[-1] - points[-2]) > threshold:
         outliers[-1] = True
 
+    # Use median for central points
     for i in range(1, len(points) - 1):
         prev_point = points[i - 1]
         current_point = points[i]
         next_point = points[i + 1]
 
+        # Calculate the median point
         median_point = np.median([prev_point, next_point], axis=0)
+
+        # Calculate the deviation from the median point
         deviation = np.linalg.norm(current_point - median_point)
 
+        # Mark as outlier if deviation is above the threshold
         if deviation > threshold:
             outliers[i] = True
     return outliers
 
 def adaptive_jems_algorithm(points: np.ndarray, error_threshold: float=0.05, max_iterations: int=100, initial_learning_rate: float=0.2, convergence_window: int=5):
+    """
+    JEMS algorithm that adapts to the number of input points, similar to VW.
+    It generates t_values based on the number of input points.
+    """
     points = np.array(points)
     control_points = get_initial_control_points(points)
     bezier_degree = len(control_points) - 1
@@ -68,6 +90,7 @@ def adaptive_jems_algorithm(points: np.ndarray, error_threshold: float=0.05, max
         print(f"Not enough points ({num_points}) to fit a Bezier curve with {bezier_degree} degree.")
         return None, 0
 
+    # Generate t_values and corresponding indices in the data points array
     num_t_values = max(100, num_points * 2)
     t_values = np.linspace(0, 1, num_t_values)
     t_values_to_fit = np.linspace(0, num_points - 1, num_t_values, dtype=int)
@@ -80,12 +103,15 @@ def adaptive_jems_algorithm(points: np.ndarray, error_threshold: float=0.05, max
 
         curve_points = curve.evaluate_multi(t_values)
 
+        # --- More Vectorized Error Calculation ---
         distances = np.linalg.norm(curve_points - points[t_values_to_fit], axis=1)
+        # ------------------------------------------
 
         max_error = np.max(distances)
         average_error = np.mean(distances)
         previous_errors.append(average_error)
 
+        # Convergence check
         if max_error <= error_threshold:
             if len(previous_errors) > convergence_window:
                 error_range = np.max(previous_errors[-convergence_window:]) - np.min(previous_errors[-convergence_window:])
@@ -96,20 +122,26 @@ def adaptive_jems_algorithm(points: np.ndarray, error_threshold: float=0.05, max
                 print(f"Adaptive JEMS converged after {iteration+1} iterations with max error {max_error:.4f} and average error {average_error:.4f}.")
                 return curve, iteration
 
+        # Convergence based on error change
         if len(previous_errors) > convergence_window:
             error_range = np.max(previous_errors[-convergence_window:]) - np.min(previous_errors[-convergence_window:])
             if error_range < error_threshold / 10 and max_error <= error_threshold:
                 print(f"Adaptive JEMS converged based on error change after {iteration+1} iterations, max error: {max_error:.4f}, avg error: {average_error:.4f}")
                 return curve, iteration
 
+        # --- More Vectorized Control Point Adjustment ---
         max_error_index = np.argmax(distances)
 
+        # Calculate basis values for all control points at once
         basis_values = np.array([comb(bezier_degree, i) * (t_values[max_error_index] ** i) * ((1 - t_values[max_error_index]) ** (bezier_degree - i)) for i in range(bezier_degree + 1)])
 
+        # Calculate error vector
         error_vector = (points[t_values_to_fit][max_error_index] - curve_points[max_error_index])
 
+        # Vectorized adjustment calculation and update
         adjustment_vector = learning_rate * basis_values[:, np.newaxis] * error_vector
         control_points += np.clip(adjustment_vector, -0.5, 0.5)
+        # --------------------------------------------------
 
         curve = BezierCurve(control_points)
 
@@ -141,7 +173,23 @@ def visvalingam_whyatt(points: np.ndarray, tolerance: float):
     return np.array(simplified_points)
 
 def mocap_cleaning_pipeline(mocap_data: np.ndarray, vw_tolerance:float=None, error_threshold:float=0.05, max_iterations:int=100, initial_learning_rate:float=0.2, outlier_threshold:float=3, use_outlier_detection:bool=True):
+    """
+    A pipeline for cleaning mocap data using outlier detection and Bezier curve fitting.
+
+    Args:
+        mocap_data (np.ndarray): The raw mocap data points.
+        vw_tolerance (float, optional): Tolerance for Visvalingam-Whyatt simplification. Defaults to None (no simplification).
+        error_threshold (float, optional): Error threshold for JEMS convergence. Defaults to 0.05.
+        max_iterations (int, optional): Maximum iterations for JEMS. Defaults to 100.
+        learning_rate (float, optional): Learning rate for JEMS. Defaults to 0.2.
+        outlier_threshold (float, optional): Threshold for outlier detection. Defaults to 3.
+        use_outlier_detection (bool, optional): Enable or disable outlier detection. Defaults to True.
+
+    Returns:
+        tuple: The fitted Bezier curve object and the number of iterations, or None and 0 if fitting fails.
+    """
     try:
+        # 1. Detect and potentially remove outliers
         if use_outlier_detection:
             outlier_indices = detect_outliers(mocap_data, threshold=outlier_threshold)
             cleaned_data = np.delete(mocap_data, outlier_indices, axis=0)
@@ -153,6 +201,7 @@ def mocap_cleaning_pipeline(mocap_data: np.ndarray, vw_tolerance:float=None, err
             print("Not enough points after outlier removal to fit a Bezier curve of this degree.")
             return None, 0
 
+        # 2. Apply Visvalingam-Whyatt simplification if a tolerance is provided
         if vw_tolerance is not None:
             simplified_data = visvalingam_whyatt(cleaned_data, vw_tolerance)
             print(f"Simplified data from {len(cleaned_data)} to {len(simplified_data)} points using Visvalingam-Whyatt.")

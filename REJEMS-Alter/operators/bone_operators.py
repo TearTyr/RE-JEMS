@@ -2,6 +2,7 @@ import bpy
 from bpy.types import Operator
 from bpy.props import IntProperty
 
+# --- Operator to Pick Bone with Eyedropper ---
 class ReJemsAlterPickBoneOperator(Operator):
     bl_idname = "object.rejems_alter_pick_bone"
     bl_label = "Pick Bone"
@@ -13,6 +14,7 @@ class ReJemsAlterPickBoneOperator(Operator):
 
     def modal(self, context, event):
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            # Get the selected bone
             selected_bone = context.active_pose_bone
             if selected_bone:
                 context.scene.rejems_alter_props.selected_bone_name = selected_bone.name
@@ -24,6 +26,7 @@ class ReJemsAlterPickBoneOperator(Operator):
             return {'CANCELLED'}
         return {'RUNNING_MODAL'}
 
+# --- Operator to Add Bone to Whitelist ---
 class ReJemsAlterAddBoneOperator(Operator):
     bl_idname = "object.rejems_alter_add_bone"
     bl_label = "Add Bone to Whitelist"
@@ -46,6 +49,7 @@ class ReJemsAlterAddBoneOperator(Operator):
         item.name = bone_name
         return {'FINISHED'}
 
+# --- Operator to Remove Bone from Whitelist ---
 class ReJemsAlterRemoveBoneOperator(Operator):
     bl_idname = "object.rejems_alter_remove_bone"
     bl_label = "Remove Bone from Whitelist"
